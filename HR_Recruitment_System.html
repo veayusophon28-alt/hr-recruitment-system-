@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HR Recruitment Management</title>
+<style>
+body{margin:0;font-family:Arial;background:#f4f7fb;color:#172033}.wrap{max-width:1100px;margin:auto;padding:20px}
+header{background:#102b52;color:white;padding:18px}.nav{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}.nav button,.btn{border:0;border-radius:7px;padding:10px 14px;background:#1976ed;color:white;cursor:pointer}.nav button{background:#e6edf7;color:#172033}.nav button.active{background:#1976ed;color:white}
+.card{background:white;padding:18px;border-radius:12px;margin:14px 0;box-shadow:0 2px 10px #00000010}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.stat{font-size:28px;font-weight:bold}.field{display:flex;flex-direction:column;gap:5px;margin:8px 0}input,select,textarea{padding:10px;border:1px solid #ccd5e2;border-radius:7px}textarea{min-height:80px}table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}.page{display:none}.page.active{display:block}.badge{padding:4px 8px;border-radius:15px;background:#e5f7ed;color:#147544;font-size:12px}
+</style></head>
+<body>
+<header><div class="wrap"><b>👥 HR Recruitment Management System</b></div></header>
+<div class="wrap">
+<div class="nav">
+<button class="active" onclick="page('dashboard',this)">Dashboard</button><button onclick="page('positions',this)">Positions + JD</button><button onclick="page('candidates',this)">Applicants</button><button onclick="page('apply',this)">Apply</button>
+</div>
+
+<section id="dashboard" class="page active">
+<h1>HR Dashboard</h1><div class="grid">
+<div class="card">Positions<div class="stat" id="sPos">0</div></div><div class="card">Open<div class="stat" id="sOpen">0</div></div><div class="card">Applicants<div class="stat" id="sCand">0</div></div>
+</div><div class="card"><h2>How to use</h2><p>1. Create a Position and JD → 2. Give candidates the Apply page → 3. Review Applicants → 4. Update status.</p><p><b>Data is saved in this browser.</b></p></div>
+</section>
+
+<section id="positions" class="page">
+<h1>Positions & JD</h1><div class="card"><h3>Create Position</h3>
+<div class="grid"><div class="field">Position<input id="pn"></div><div class="field">Department<input id="pd"></div><div class="field">Location<input id="pl"></div><div class="field">Salary Range<input id="ps"></div></div>
+<div class="field">Job Description<textarea id="pj"></textarea></div><button class="btn" onclick="addPos()">Save Position</button></div>
+<div id="posList"></div></section>
+
+<section id="candidates" class="page">
+<h1>Applicants</h1><div class="card"><div style="overflow:auto"><table><thead><tr><th>Name</th><th>Position</th><th>Phone</th><th>Email</th><th>Status</th></tr></thead><tbody id="candList"></tbody></table></div></div>
+</section>
+
+<section id="apply" class="page">
+<h1>Candidate Application</h1><div class="card"><div class="grid"><div class="field">Full Name *<input id="cn"></div><div class="field">Phone *<input id="cp"></div><div class="field">Email<input id="ce"></div><div class="field">Position<select id="cpos"></select></div><div class="field">Education<input id="ced"></div><div class="field">Experience<input id="cx"></div></div><div class="field">Skills<textarea id="cs"></textarea></div><button class="btn" onclick="applyNow()">Submit Application</button></div></section>
+</div>
+<script>
+const K="HR_SIMPLE_V1";
+let d=JSON.parse(localStorage.getItem(K)||"null")||{positions:[],candidates:[]};
+function save(){localStorage.setItem(K,JSON.stringify(d))}
+function page(id,b){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}
+function addPos(){let name=pn.value.trim();if(!name)return alert("Enter Position");d.positions.push({name,dept:pd.value,loc:pl.value,salary:ps.value,jd:pj.value,status:"Open"});save();pn.value=pd.value=pl.value=ps.value=pj.value="";render();alert("Position created")}
+function applyNow(){if(!cn.value.trim()||!cp.value.trim())return alert("Name and Phone are required");d.candidates.push({name:cn.value,phone:cp.value,email:ce.value,position:cpos.value,education:ced.value,experience:cx.value,skills:cs.value,status:"Applied"});save();cn.value=cp.value=ce.value=ced.value=cx.value=cs.value="";alert("Application submitted");page("candidates",document.querySelectorAll(".nav button")[2])}
+function status(i,v){d.candidates[i].status=v;save();render()}
+function render(){
+sPos.textContent=d.positions.length;sOpen.textContent=d.positions.filter(x=>x.status==="Open").length;sCand.textContent=d.candidates.length;
+posList.innerHTML=d.positions.map((p,i)=>`<div class="card"><h3>${p.name} <span class="badge">${p.status}</span></h3><p>${p.dept} · ${p.loc} · ${p.salary}</p><p>${p.jd||""}</p><button class="btn" onclick="applyFor(${i})">Apply for this Position</button></div>`).join("")||'<div class="card">No positions yet.</div>';
+cpos.innerHTML=d.positions.filter(p=>p.status==="Open").map(p=>`<option>${p.name}</option>`).join("");
+candList.innerHTML=d.candidates.map((c,i)=>`<tr><td>${c.name}</td><td>${c.position}</td><td>${c.phone}</td><td>${c.email}</td><td><select onchange="status(${i},this.value)">${["Applied","Screening","Interview","Passed","Hired","Rejected"].map(s=>`<option ${s===c.status?"selected":""}>${s}</option>`).join("")}</select></td></tr>`).join("")||'<tr><td colspan="5">No applicants yet.</td></tr>'
+}
+function applyFor(i){page("apply",document.querySelectorAll(".nav button")[3]);cpos.value=d.positions[i].name}
+render();
+</script>
+</body></html>
